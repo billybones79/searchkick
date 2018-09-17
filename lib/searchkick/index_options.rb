@@ -37,7 +37,7 @@ module Searchkick
                 # character filters -> tokenizer -> token filters
                 # https://www.elastic.co/guide/en/elasticsearch/guide/current/analysis-intro.html
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 # synonym should come last, after stemming and shingle
                 # shingle must come before searchkick_stemmer
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_index_shingle", "searchkick_stemmer"]
@@ -45,13 +45,13 @@ module Searchkick
               searchkick_search: {
                 type: "custom",
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_search_shingle", "searchkick_stemmer"]
               },
               searchkick_search2: {
                 type: "custom",
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_stemmer"]
               },
               # https://github.com/leschenko/elasticsearch_autocomplete/blob/master/lib/elasticsearch_autocomplete/analyzers.rb
@@ -62,12 +62,12 @@ module Searchkick
               },
               searchkick_word_search: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["lowercase", "asciifolding"]
               },
               searchkick_suggest_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["lowercase", "asciifolding", "searchkick_suggest_shingle"]
               },
               searchkick_text_start_index: {
@@ -87,17 +87,17 @@ module Searchkick
               },
               searchkick_word_start_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["lowercase", "asciifolding", "searchkick_edge_ngram"]
               },
               searchkick_word_middle_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["lowercase", "asciifolding", "searchkick_ngram"]
               },
               searchkick_word_end_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "whitespace",
                 filter: ["lowercase", "asciifolding", "reverse", "searchkick_edge_ngram", "reverse"]
               }
             },
