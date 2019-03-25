@@ -34,6 +34,11 @@ module Searchkick
       index.klass_document_type(record.class, ignore_type)
     end
 
+    # memoize
+    def self.routing_key
+      @routing_key ||= Searchkick.server_below?("6.0.0") ? :_routing : :routing
+    end
+
     private
 
     def record_data
@@ -42,7 +47,7 @@ module Searchkick
         _id: search_id,
         _type: document_type
       }
-      data[:_routing] = record.search_routing if record.respond_to?(:search_routing)
+      data[self.class.routing_key] = record.search_routing if record.respond_to?(:search_routing)
       data
     end
 
@@ -61,7 +66,7 @@ module Searchkick
       # hack to prevent generator field doesn't exist error
       if !partial_reindex
         index.suggest_fields.each do |field|
-          if !source[field] && !source[field.to_sym]
+          if !source.key?(field) && !source.key?(field.to_sym)
             source[field] = nil
           end
         end
@@ -112,7 +117,7 @@ module Searchkick
           # performance
           if v.is_a?(BigDecimal)
             obj[k] = v.to_f
-          elsif v.is_a?(Enumerable) ||
+          elsif v.is_a?(Enumerable)
             obj[k] = cast_big_decimal(v)
           end
         end

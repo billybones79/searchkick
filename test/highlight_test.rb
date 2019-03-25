@@ -6,6 +6,11 @@ class HighlightTest < Minitest::Test
     assert_equal "Two Door <em>Cinema</em> Club", Product.search("cinema", highlight: true).highlights.first[:name]
   end
 
+  def test_with_highlights
+    store_names ["Two Door Cinema Club"]
+    assert_equal "Two Door <em>Cinema</em> Club", Product.search("cinema", highlight: true).with_highlights.first.last[:name]
+  end
+
   def test_tag
     store_names ["Two Door Cinema Club"]
     assert_equal "Two Door <strong>Cinema</strong> Club", Product.search("cinema", highlight: {tag: "<strong>"}).highlights.first[:name]
@@ -90,5 +95,20 @@ class HighlightTest < Minitest::Test
   def test_search_highlights_method
     store_names ["Two Door Cinema Club"]
     assert_equal "Two Door <em>Cinema</em> Club", Product.search("cinema", highlight: true).first.search_highlights[:name]
+  end
+
+  def test_match_all
+    store_names ["Two Door Cinema Club"]
+    assert_nil Product.search("*", highlight: true).highlights.first[:name]
+  end
+
+  def test_match_all_load_false
+    store_names ["Two Door Cinema Club"]
+    assert_nil Product.search("*", highlight: true, load: false).highlights.first[:name]
+  end
+
+  def test_match_all_search_highlights
+    store_names ["Two Door Cinema Club"]
+    assert_nil Product.search("*", highlight: true).first.search_highlights[:name]
   end
 end

@@ -40,19 +40,19 @@ module Searchkick
                 tokenizer: "whitespace",
                 # synonym should come last, after stemming and shingle
                 # shingle must come before searchkick_stemmer
-                filter: ["standard", "lowercase", "asciifolding", "searchkick_index_shingle", "searchkick_stemmer"]
+                filter: ["lowercase", "asciifolding", "searchkick_index_shingle", "searchkick_stemmer"]
               },
               searchkick_search: {
                 type: "custom",
                 char_filter: ["ampersand"],
                 tokenizer: "whitespace",
-                filter: ["standard", "lowercase", "asciifolding", "searchkick_search_shingle", "searchkick_stemmer"]
+                filter: ["lowercase", "asciifolding", "searchkick_search_shingle", "searchkick_stemmer"]
               },
               searchkick_search2: {
                 type: "custom",
                 char_filter: ["ampersand"],
                 tokenizer: "whitespace",
-                filter: ["standard", "lowercase", "asciifolding", "searchkick_stemmer"]
+                filter: [ "lowercase", "asciifolding", "searchkick_stemmer"]
               },
               # https://github.com/leschenko/elasticsearch_autocomplete/blob/master/lib/elasticsearch_autocomplete/analyzers.rb
               searchkick_autocomplete_search: {
@@ -144,6 +144,17 @@ module Searchkick
           }
         }
 
+        if below60
+          # ES docs say standard token filter does nothing in ES 5
+          # (and therefore isn't needed at at), but tests say otherwise
+          # https://www.elastic.co/guide/en/elasticsearch/reference/5.0/analysis-standard-tokenfilter.html
+          [default_analyzer, :searchkick_search, :searchkick_search2].each do |analyzer|
+            settings[:analysis][:analyzer][analyzer][:filter].unshift("standard")
+          end
+        end
+
+        stem = options[:stem]
+
         case language
         when "chinese"
           settings[:analysis][:analyzer].merge!(
@@ -158,7 +169,7 @@ module Searchkick
             }
           )
 
-          settings[:analysis][:filter].delete(:searchkick_stemmer)
+          stem = false
         when "japanese"
           settings[:analysis][:analyzer].merge!(
             default_analyzer => {
@@ -171,6 +182,8 @@ module Searchkick
               type: "kuromoji"
             }
           )
+
+          stem = false
         when "korean"
           settings[:analysis][:analyzer].merge!(
             default_analyzer => {
@@ -183,6 +196,8 @@ module Searchkick
               type: "openkoreantext-analyzer"
             }
           )
+
+          stem = false
         when "vietnamese"
           settings[:analysis][:analyzer].merge!(
             default_analyzer => {
@@ -195,6 +210,8 @@ module Searchkick
               type: "vi_analyzer"
             }
           )
+
+          stem = false
         when "polish", "ukrainian", "smartcn"
           settings[:analysis][:analyzer].merge!(
             default_analyzer => {
@@ -207,6 +224,8 @@ module Searchkick
               type: language
             }
           )
+
+          stem = false
         end
 
         if Searchkick.env == "test"
@@ -225,7 +244,20 @@ module Searchkick
           }
         end
 
-        settings.deep_merge!(options[:settings] || {})
+        if options[:case_sensitive]
+          settings[:analysis][:analyzer].each do |_, analyzer|
+            analyzer[:filter].delete("lowercase")
+          end
+        end
+
+        if stem == false
+          settings[:analysis][:filter].delete(:searchkick_stemmer)
+          settings[:analysis][:analyzer].each do |_, analyzer|
+            analyzer[:filter].delete("searchkick_stemmer") if analyzer[:filter]
+          end
+        end
+
+        settings = settings.symbolize_keys.deep_merge((options[:settings] || {}).symbolize_keys)
 
         # synonyms
         synonyms = options[:synonyms] || []
@@ -311,10 +343,10 @@ module Searchkick
 
           if !options[:searchable] || mapping_options[:searchable].include?(field)
             if word
-              fields["analyzed"] = analyzed_field_options
+              fields[:analyzed] = analyzed_field_options
 
               if mapping_options[:highlight].include?(field)
-                fields["analyzed"][:term_vector] = "with_positions_offsets"
+                fields[:analyzed][:term_vector] = "with_positions_offsets"
               end
             end
 
@@ -373,7 +405,7 @@ module Searchkick
           end
 
           if word
-            dynamic_fields["analyzed"] = analyzed_field_options
+            dynamic_fields[:analyzed] = analyzed_field_options
           end
         end
 
@@ -402,7 +434,7 @@ module Searchkick
           mappings[index_type][:_all] = all_enabled ? analyzed_field_options : {enabled: false}
         end
 
-        mappings = mappings.deep_merge(options[:mappings] || {})
+        mappings = mappings.symbolize_keys.deep_merge((options[:mappings] || {}).symbolize_keys)
       end
 
       {

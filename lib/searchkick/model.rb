@@ -3,10 +3,10 @@ module Searchkick
     def searchkick(**options)
       options = Searchkick.model_options.merge(options)
 
-      unknown_keywords = options.keys - [:_all, :_type, :batch_size, :callbacks, :conversions, :default_fields,
+      unknown_keywords = options.keys - [:_all, :_type, :batch_size, :callbacks, :case_sensitive, :conversions, :default_fields,
         :filterable, :geo_shape, :highlight, :ignore_above, :index_name, :index_prefix, :inheritance, :language,
         :locations, :mappings, :match, :merge_mappings, :routing, :searchable, :settings, :similarity,
-        :special_characters, :stem_conversions, :suggest, :synonyms, :text_end,
+        :special_characters, :stem, :stem_conversions, :suggest, :synonyms, :text_end,
         :text_middle, :text_start, :word, :wordnet, :word_end, :word_middle, :word_start]
       raise ArgumentError, "unknown keywords: #{unknown_keywords.join(", ")}" if unknown_keywords.any?
 
@@ -16,8 +16,8 @@ module Searchkick
 
       options[:_type] ||= -> { searchkick_index.klass_document_type(self, true) }
 
-      callbacks = options.key?(:callbacks) ? options[:callbacks] : true
-      unless [true, false, :async, :queue].include?(callbacks)
+      callbacks = options.key?(:callbacks) ? options[:callbacks] : :inline
+      unless [:inline, true, false, :async, :queue].include?(callbacks)
         raise ArgumentError, "Invalid value for callbacks"
       end
 

@@ -9,7 +9,7 @@ module Searchkick
 
     queue_as { Searchkick.queue_name }
 
-    def perform(klass, id, method_name = nil)
+    def perform(klass, id, method_name = nil, routing: nil)
       model = klass.constantize
       record =
         begin
@@ -28,9 +28,14 @@ module Searchkick
       unless record
         record = model.new
         record.id = id
+        if routing
+          record.define_singleton_method(:search_routing) do
+            routing
+          end
+        end
       end
 
-      RecordIndexer.new(record).reindex(method_name, mode: true)
+      RecordIndexer.new(record).reindex(method_name, mode: :inline)
     end
   end
 end

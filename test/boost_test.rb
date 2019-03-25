@@ -149,6 +149,33 @@ class BoostTest < Minitest::Test
     assert_order "tomato", ["Tomato C", "Tomato B", "Tomato A"], boost_where: {user_ids: [{value: 1, factor: 10}, {value: 3, factor: 20}]}
   end
 
+  def test_boost_where_negative_boost
+    store [
+      {name: "Tomato A"},
+      {name: "Tomato B", user_ids: [2]},
+      {name: "Tomato C", user_ids: [2]}
+    ]
+    assert_first "tomato", "Tomato A", boost_where: {user_ids: {value: 2, factor: 0.5}}
+  end
+
+  def test_boost_by_recency
+    store [
+      {name: "Article 1", created_at: 2.days.ago},
+      {name: "Article 2", created_at: 1.day.ago},
+      {name: "Article 3", created_at: Time.now}
+    ]
+    assert_order "article", ["Article 3", "Article 2", "Article 1"], boost_by_recency: {created_at: {scale: "7d", decay: 0.5}}
+  end
+
+  def test_boost_by_recency_origin
+    store [
+      {name: "Article 1", created_at: 2.days.ago},
+      {name: "Article 2", created_at: 1.day.ago},
+      {name: "Article 3", created_at: Time.now}
+    ]
+    assert_order "article", ["Article 1", "Article 2", "Article 3"], boost_by_recency: {created_at: {origin: 2.days.ago, scale: "7d", decay: 0.5}}
+  end
+
   def test_boost_by_distance
     store [
       {name: "San Francisco", latitude: 37.7833, longitude: -122.4167},
