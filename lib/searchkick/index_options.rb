@@ -29,15 +29,15 @@ module Searchkick
             analyzer: {
               searchkick_keyword: {
                 type: "custom",
-                tokenizer: "keyword",
+                tokenizer: "letter",
                 filter: ["lowercase"] + (options[:stem_conversions] ? ["searchkick_stemmer"] : [])
               },
-              default_analyzer => {
+              default_analyzer: {
                 type: "custom",
                 # character filters -> tokenizer -> token filters
                 # https://www.elastic.co/guide/en/elasticsearch/guide/current/analysis-intro.html
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "letter",
                 # synonym should come last, after stemming and shingle
                 # shingle must come before searchkick_stemmer
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_index_shingle", "searchkick_stemmer"]
@@ -45,13 +45,13 @@ module Searchkick
               searchkick_search: {
                 type: "custom",
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_search_shingle", "searchkick_stemmer"]
               },
               searchkick_search2: {
                 type: "custom",
                 char_filter: ["ampersand"],
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["standard", "lowercase", "asciifolding", "searchkick_stemmer"]
               },
               # https://github.com/leschenko/elasticsearch_autocomplete/blob/master/lib/elasticsearch_autocomplete/analyzers.rb
@@ -62,42 +62,42 @@ module Searchkick
               },
               searchkick_word_search: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding"]
               },
               searchkick_suggest_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "searchkick_suggest_shingle"]
               },
               searchkick_text_start_index: {
                 type: "custom",
-                tokenizer: "keyword",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "searchkick_edge_ngram"]
               },
               searchkick_text_middle_index: {
                 type: "custom",
-                tokenizer: "keyword",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "searchkick_ngram"]
               },
               searchkick_text_end_index: {
                 type: "custom",
-                tokenizer: "keyword",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "reverse", "searchkick_edge_ngram", "reverse"]
               },
               searchkick_word_start_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "ddddddddddd",
                 filter: ["lowercase", "asciifolding", "searchkick_edge_ngram"]
               },
               searchkick_word_middle_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "searchkick_ngram"]
               },
               searchkick_word_end_index: {
                 type: "custom",
-                tokenizer: "standard",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "reverse", "searchkick_edge_ngram", "reverse"]
               }
             },
@@ -225,19 +225,7 @@ module Searchkick
           }
         end
 
-        if options[:case_sensitive]
-          settings[:analysis][:analyzer].each do |_, analyzer|
-            analyzer[:filter].delete("lowercase")
-          end
-        end
-
-        if options[:stem] == false
-          settings[:analysis][:analyzer].each do |_, analyzer|
-            analyzer[:filter].delete("searchkick_stemmer")
-          end
-        end
-
-        settings = settings.symbolize_keys.deep_merge((options[:settings] || {}).symbolize_keys)
+        settings.deep_merge!(options[:settings] || {})
 
         # synonyms
         synonyms = options[:synonyms] || []
@@ -323,10 +311,10 @@ module Searchkick
 
           if !options[:searchable] || mapping_options[:searchable].include?(field)
             if word
-              fields[:analyzed] = analyzed_field_options
+              fields["analyzed"] = analyzed_field_options
 
               if mapping_options[:highlight].include?(field)
-                fields[:analyzed][:term_vector] = "with_positions_offsets"
+                fields["analyzed"][:term_vector] = "with_positions_offsets"
               end
             end
 
@@ -385,7 +373,7 @@ module Searchkick
           end
 
           if word
-            dynamic_fields[:analyzed] = analyzed_field_options
+            dynamic_fields["analyzed"] = analyzed_field_options
           end
         end
 
@@ -414,7 +402,7 @@ module Searchkick
           mappings[index_type][:_all] = all_enabled ? analyzed_field_options : {enabled: false}
         end
 
-        mappings = mappings.symbolize_keys.deep_merge((options[:mappings] || {}).symbolize_keys)
+        mappings = mappings.deep_merge(options[:mappings] || {})
       end
 
       {
