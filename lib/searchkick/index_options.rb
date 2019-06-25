@@ -87,7 +87,7 @@ module Searchkick
               },
               searchkick_word_start_index: {
                 type: "custom",
-                tokenizer: "ddddddddddd",
+                tokenizer: "letter",
                 filter: ["lowercase", "asciifolding", "searchkick_edge_ngram"]
               },
               searchkick_word_middle_index: {
